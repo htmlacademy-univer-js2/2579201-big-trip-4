@@ -5,8 +5,8 @@ const mockEvents = [
     id: 'event1',
     type: 'taxi',
     destination: 'dest1',
-    startDate: '25/12/19 16:00',
-    endDate: '25/12/19 16:30',
+    startDate: new Date('2019-12-25T16:00:00.000Z'),
+    endDate: new Date('2019-12-25T16:30:00.000Z'),
     price: 500,
     isFavourite: false,
     offers: ['offer1', 'offer2']
@@ -15,8 +15,8 @@ const mockEvents = [
     id: 'event2',
     type: 'flight',
     destination: 'dest2',
-    startDate: '05/01/20 11:00',
-    endDate: '05/01/20 14:00',
+    startDate: new Date('2020-01-05T11:00:00.000Z'),
+    endDate: new Date('2020-01-05T14:00:00.000Z'),
     price: 300,
     isFavourite: false,
     offers: ['offer4', 'offer5']
@@ -26,8 +26,8 @@ const mockEvents = [
     id: 'event3',
     type: 'bus',
     destination: 'dest3',
-    startDate: '05/01/20 11:00',
-    endDate: '05/01/20 14:00',
+    startDate: new Date('2022-01-05T11:00:00.000Z'),
+    endDate: new Date('2022-01-29T11:00:00.000Z'),
     price: 200,
     isFavourite: true,
     offers: ['offer6', 'offer7']
