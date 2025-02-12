@@ -8,21 +8,23 @@ import {render} from '../render.js';
 
 export default class Presenter {
   eventListComponent = new EventListView();
-
-  constructor() {
+  constructor({eventModel}) {
     this.eventsContainer = document.querySelector('.trip-events');
     this.filterContainer = document.querySelector('.trip-controls__filters');
+    this.eventModel = eventModel;
   }
 
 
   init() {
+    this.events = [...this.eventModel.getEvents()];
+
     render(new NewFiltersView(), this.filterContainer);
     render(new NewSortView(), this.eventsContainer);
     render(this.eventListComponent, this.eventsContainer);
-    render(new NewEditFormView(), this.eventListComponent.getElement());
+    render(new NewEditFormView({event: this.events[0]}), this.eventListComponent.getElement());
 
-    for (let i = 0; i < 3; i++) {
-      render(new NewEventView(), this.eventListComponent.getElement());
+    for (let i = 1; i < this.events.length; i++) {
+      render(new NewEventView({event: this.events[i]}), this.eventListComponent.getElement());
     }
 
     render(new NewCreationFormView(), this.eventListComponent.getElement());
