@@ -1,8 +1,9 @@
 import { EVENT_TYPES } from '../const.js';
+import AbstractView from '../framework/view/abstract-view.js';
 import { getAvailableOffers } from '../mock/createEvent.js';
 import { mockOffers } from '../mock/event.js';
-import { createElement } from '../render.js';
 import { getDateTime } from '../utils.js';
+
 function generateEventTypeRadio(eventType){
   return EVENT_TYPES.map((type) => `<div class="event__type-item">
   <input id="event-type-${type}-1" class="event__type-input  visually-hidden" type="radio" name="event-type" value="${type}"  ${eventType === type ? 'checked' : ''}>
@@ -31,7 +32,9 @@ function createEditFormTemplate(event) {
     return createOffersTemplate(offer, isChecked);
   }).join('');
 
-  return `<form class="event event--edit" action="#" method="post">
+  return `
+  <li class="trip-events__item">
+  <form class="event event--edit" action="#" method="post">
                 <header class="event__header">
                   <div class="event__type-wrapper">
                     <label class="event__type  event__type-btn" for="event-type-toggle-1">
@@ -97,27 +100,30 @@ function createEditFormTemplate(event) {
                     <p class="event__destination-description">Chamonix-Mont-Blanc (usually shortened to Chamonix) is a resort area near the junction of France, Switzerland and Italy. At the base of Mont Blanc, the highest summit in the Alps, it's renowned for its skiing.</p>
                   </section>
                 </section>
-              </form>`;
+              </form>
+              </li>`;
 }
 
-export default class NewEditFormView {
-  constructor({event}){
+export default class NewEditFormView extends AbstractView{
+  #handleCloseForm = null;
+
+  constructor({event, closeForm}){
+    super();
     this.event = event;
+    this.#handleCloseForm = closeForm;
+
+    this.element.querySelector('form').addEventListener('submit', this.#closeFormHandler);
+    this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#closeFormHandler);
+
   }
 
-  getTemplate() {
+  get template() {
     return createEditFormTemplate(this.event);
   }
 
-  getElement() {
-    if (!this.element) {
-      this.element = createElement(this.getTemplate());
-    }
+  #closeFormHandler = (e) =>{
+    e.preventDefault();
+    this.#handleCloseForm();
+  };
 
-    return this.element;
-  }
-
-  removeElement() {
-    this.element = null;
-  }
 }
