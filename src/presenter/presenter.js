@@ -4,8 +4,7 @@ import NewEditFormView from '../view/edit-form-view.js';
 import NewEventView from '../view/event-view.js';
 import EventListView from '../view/event-list-view.js';
 import NewFiltersView from '../view/filters-view.js';
-import {render} from '../render.js';
-import { replace } from '../framework/render.js';
+import { render, replace } from '../framework/render.js';
 
 export default class Presenter {
   #eventListComponent = new EventListView();
