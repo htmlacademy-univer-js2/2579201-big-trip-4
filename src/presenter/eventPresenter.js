@@ -43,11 +43,11 @@ export default class EventPresenter {
       return;
     }
 
-    if (this.#eventListComponent.element.contains(prevEventComponent.element)) {
+    if (!this.#isEditing) {
       replace(this.#eventComponent, prevEventComponent);
     }
 
-    if (this.#eventListComponent.element.contains(prevEventEditComponent.element)) {
+    if (this.#isEditing) {
       replace(this.#eventEditComponent, prevEventEditComponent);
     }
     remove(prevEventComponent);
