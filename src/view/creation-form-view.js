@@ -163,7 +163,7 @@ function createCreationFormTemplate() {
               </form>`;
 }
 
-export default class NewCreationFormView extends AbstractView{
+export default class CreationFormView extends AbstractView{
   get template() {
     return createCreationFormTemplate();
   }

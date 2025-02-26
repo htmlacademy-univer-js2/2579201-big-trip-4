@@ -1,7 +1,7 @@
-import NewSortView from '../view/sort-view.js';
-import NewCreationFormView from '../view/creation-form-view.js';
+import SortView from '../view/sort-view.js';
+import CreationFormView from '../view/creation-form-view.js';
 import EventListView from '../view/event-list-view.js';
-import NewFiltersView from '../view/filters-view.js';
+import FiltersView from '../view/filters-view.js';
 import { render } from '../framework/render.js';
 import EventPresenter from './eventPresenter.js';
 
@@ -23,15 +23,15 @@ export default class Presenter {
   init() {
     this.#events = [...this.#eventModel.events];
 
-    render(new NewFiltersView(), this.#filterContainer);
-    render(new NewSortView(), this.#eventsContainer);
+    render(new FiltersView(), this.#filterContainer);
+    render(new SortView(), this.#eventsContainer);
     render(this.#eventListComponent, this.#eventsContainer);
 
     for (let i = 0; i < this.#events.length; i++) {
       this.#renderEvents(this.#events[i]);
     }
 
-    render(new NewCreationFormView(), this.#eventListComponent.element);
+    render(new CreationFormView(), this.#eventListComponent.element);
   }
 
   #renderEvents(event){

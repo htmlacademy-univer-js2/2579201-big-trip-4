@@ -1,6 +1,6 @@
 import { remove, render, replace } from '../framework/render';
-import NewEditFormView from '../view/edit-form-view';
-import NewEventView from '../view/event-view';
+import EditFormView from '../view/edit-form-view';
+import EventView from '../view/event-view';
 
 export default class EventPresenter {
   #eventComponent = null;
@@ -26,14 +26,14 @@ export default class EventPresenter {
     const prevEventComponent = this.#eventComponent;
     const prevEventEditComponent = this.#eventEditComponent;
 
-    this.#eventComponent = new NewEventView({event: this.#event, onArrowClick: ()=>{
+    this.#eventComponent = new EventView({event: this.#event, onArrowClick: ()=>{
       this.#openEditor();
       document.addEventListener('keydown', this.#escKeyHandler);
     }, onStarClick: ()=>{
       this.#updateEvent();
     }});
 
-    this.#eventEditComponent = new NewEditFormView({event: this.#event, closeForm: ()=>{
+    this.#eventEditComponent = new EditFormView({event: this.#event, closeForm: ()=>{
       document.addEventListener('keydown', this.#escKeyHandler);
       this.#closeEditor();
     }});

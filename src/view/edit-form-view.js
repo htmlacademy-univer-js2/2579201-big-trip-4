@@ -104,7 +104,7 @@ function createEditFormTemplate(event) {
               </li>`;
 }
 
-export default class NewEditFormView extends AbstractView{
+export default class EditFormView extends AbstractView{
   #handleCloseForm = null;
 
   constructor({event, closeForm}){
