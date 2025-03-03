@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 const DATE_FORMAT = 'DD/MM/YY HH:mm';
 
 function getRandomNumber(number){
-  return Math.floor(Math.random * number);
+  return Math.floor(Math.random() * number);
 }
 
 function getDateTime(date){

@@ -1,14 +1,25 @@
 import { EVENT_TYPES } from '../const.js';
-import AbstractView from '../framework/view/abstract-view.js';
-import { getAvailableOffers } from '../mock/createEvent.js';
-import { mockOffers } from '../mock/event.js';
+import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
+import { getAvailableOffers, getDestinationByName } from '../mock/createEvent.js';
+import { mockDestinations, mockOffers } from '../mock/event.js';
 import { getDateTime } from '../utils.js';
+import flatpickr from 'flatpickr';
+
+import 'flatpickr/dist/flatpickr.min.css';
 
 function generateEventTypeRadio(eventType){
   return EVENT_TYPES.map((type) => `<div class="event__type-item">
   <input id="event-type-${type}-1" class="event__type-input  visually-hidden" type="radio" name="event-type" value="${type}"  ${eventType === type ? 'checked' : ''}>
   <label class="event__type-label  event__type-label--${type}" for="event-type-${type}-1">${type}</label>
 </div>`).join('');
+}
+
+function generateDestinations(){
+  return mockDestinations.map((dest)=> `<option value=${dest.name}></option>`).join('');
+}
+
+function generateDestinationPhoto(photo){
+  return `<img class="event__photo" src=${photo.src} alt=${photo.description}>`;
 }
 
 function createOffersTemplate(offer, checked){
@@ -31,7 +42,7 @@ function createEditFormTemplate(event) {
     const isChecked = offers.some((eventOffer) => eventOffer.id === offer.id);
     return createOffersTemplate(offer, isChecked);
   }).join('');
-
+  const destinationPhotos = destination.pictures.map((photo) => generateDestinationPhoto(photo)).join('');
   return `
   <li class="trip-events__item">
   <form class="event event--edit" action="#" method="post">
@@ -58,9 +69,7 @@ function createEditFormTemplate(event) {
                     </label>
                     <input class="event__input  event__input--destination" id="event-destination-1" type="text" name="event-destination" value="${destination.name}" list="destination-list-1">
                     <datalist id="destination-list-1">
-                      <option value="Amsterdam"></option>
-                      <option value="Geneva"></option>
-                      <option value="Chamonix"></option>
+                     ${generateDestinations()}
                     </datalist>
                   </div>
 
@@ -97,33 +106,104 @@ function createEditFormTemplate(event) {
 
                   <section class="event__section  event__section--destination">
                     <h3 class="event__section-title  event__section-title--destination">Destination</h3>
-                    <p class="event__destination-description">Chamonix-Mont-Blanc (usually shortened to Chamonix) is a resort area near the junction of France, Switzerland and Italy. At the base of Mont Blanc, the highest summit in the Alps, it's renowned for its skiing.</p>
+                    <p class="event__destination-description">${destination.description}</p>
+                     <div class="event__photos-container">
+                      <div class="event__photos-tape">
+                       ${destinationPhotos}
+                      </div>
+                    </div>
                   </section>
                 </section>
               </form>
               </li>`;
 }
 
-export default class EditFormView extends AbstractView{
+export default class EditFormView extends AbstractStatefulView{
   #handleCloseForm = null;
-
+  #datepicker = null;
   constructor({event, closeForm}){
     super();
-    this.event = event;
+    this._setState({...event});
     this.#handleCloseForm = closeForm;
 
+    this._restoreHandlers();
+  }
+
+  removeElement() {
+    super.removeElement();
+
+    if (this.#datepicker) {
+      this.#datepicker.destroy();
+      this.#datepicker = null;
+    }
+  }
+
+  _restoreHandlers(){
     this.element.querySelector('form').addEventListener('submit', this.#closeFormHandler);
     this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#closeFormHandler);
-
+    this.element.querySelector('.event__type-group').addEventListener('change', this.#changeType);
+    this.element.querySelector('.event__input--destination').addEventListener('change', this.#changeDestination);
+    this.#setDatepicker();
   }
 
   get template() {
-    return createEditFormTemplate(this.event);
+    return createEditFormTemplate(this._state);
   }
 
   #closeFormHandler = (e) =>{
     e.preventDefault();
     this.#handleCloseForm();
+  };
+
+
+  #startDateChangeHandler = ([userDate]) => {
+    this.updateElement({
+      startDate: userDate,
+    });
+  };
+
+  #endDateChangeHandler = ([userDate]) => {
+    this.updateElement({
+      endDate: userDate,
+    });
+  };
+
+  #setDatepicker() {
+    this.#datepicker = flatpickr(
+      this.element.querySelector('#event-start-time-1'),
+      {
+        enableTime: true,
+        dateFormat: 'd/m/y H:i',
+        defaultDate: this._state.startDate,
+        onChange: this.#startDateChangeHandler,
+      },
+      this.#datepicker = flatpickr(
+        this.element.querySelector('#event-end-time-1'),
+        {
+          minDate: this._state.startDate,
+          enableTime: true,
+          dateFormat: 'd/m/y H:i',
+          defaultDate: this._state.startDate,
+          onChange: this.#endDateChangeHandler,
+        }
+      )
+    );
+  }
+
+
+  #changeType = (event) => {
+    event.preventDefault();
+    this.updateElement({
+      type: event.target.value
+    });
+  };
+
+  #changeDestination = (event) =>{
+    event.preventDefault();
+
+    this.updateElement({
+      destination: getDestinationByName(event.target.value, mockDestinations),
+    });
   };
 
 }

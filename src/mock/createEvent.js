@@ -14,7 +14,10 @@ function getDetailedEvents(events, destinations, offers) {
 
 function getAvailableOffers(event, offers){
   return offers.find((offer) => offer.type === event.type)?.offers || [];
-
 }
 
-export { getDetailedEvents, getAvailableOffers };
+function getDestinationByName(destinationName, destinations){
+  return destinations.find((dest)=> dest.name === destinationName);
+}
+
+export { getDetailedEvents, getAvailableOffers, getDestinationByName };
