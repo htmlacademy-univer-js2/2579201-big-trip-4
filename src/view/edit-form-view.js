@@ -1,6 +1,6 @@
 import { EVENT_TYPES } from '../const.js';
 import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
-import { getAvailableOffers, getDestinationByName } from '../mock/createEvent.js';
+import { getAvailableOffers, getDestinationByName, getOfferById } from '../mock/createEvent.js';
 import { mockDestinations, mockOffers } from '../mock/event.js';
 import { getDateTime } from '../utils.js';
 import flatpickr from 'flatpickr';
@@ -26,8 +26,8 @@ function createOffersTemplate(offer, checked){
   const {id, title, price} = offer;
   return `
   <div class="event__offer-selector">
-    <input class="event__offer-checkbox  visually-hidden" id="event-offer-${id}-1" type="checkbox" name="event-offer-${id}" ${checked ? 'checked' : ''}>
-    <label class="event__offer-label" for="event-offer-${id}-1">
+    <input class="event__offer-checkbox  visually-hidden" id="${id}" type="checkbox" name="event-offer-${id}" ${checked ? 'checked' : ''}>
+    <label class="event__offer-label" for="${id}">
       <span class="event__offer-title">${title}</span>
       &plus;&euro;&nbsp;
       <span class="event__offer-price">${price}</span>
@@ -36,8 +36,8 @@ function createOffersTemplate(offer, checked){
 }
 
 function createEditFormTemplate(event) {
-  const {destination, type, price, startDate, endDate, offers} = event;
-  const availableOffers = getAvailableOffers(event, mockOffers);
+  const {destination, type, price, startDate, endDate, offers, disabled} = event;
+  const availableOffers = getAvailableOffers(type, mockOffers);
   const offersLayout = availableOffers.map((offer) =>{
     const isChecked = offers.some((eventOffer) => eventOffer.id === offer.id);
     return createOffersTemplate(offer, isChecked);
@@ -89,7 +89,7 @@ function createEditFormTemplate(event) {
                     <input class="event__input  event__input--price" id="event-price-1" type="text" name="event-price" value="${price}">
                   </div>
 
-                  <button class="event__save-btn  btn  btn--blue" type="submit">Save</button>
+                  <button class="event__save-btn  btn btn--blue" ${disabled ? 'disabled' : ''} type="submit">Save</button>
                   <button class="event__reset-btn" type="reset">Delete</button>
                   <button class="event__rollup-btn" type="button">
                     <span class="visually-hidden">Open event</span>
@@ -120,10 +120,11 @@ function createEditFormTemplate(event) {
 
 export default class EditFormView extends AbstractStatefulView{
   #handleCloseForm = null;
-  #datepicker = null;
+  #startDatepicker = null;
+  #endDatepicker = null;
   constructor({event, closeForm}){
     super();
-    this._setState({...event});
+    this._setState({...event, disabled: false});
     this.#handleCloseForm = closeForm;
 
     this._restoreHandlers();
@@ -132,9 +133,13 @@ export default class EditFormView extends AbstractStatefulView{
   removeElement() {
     super.removeElement();
 
-    if (this.#datepicker) {
-      this.#datepicker.destroy();
-      this.#datepicker = null;
+    if (this.#startDatepicker) {
+      this.#startDatepicker.destroy();
+      this.#startDatepicker = null;
+    }
+    if (this.#endDatepicker){
+      this.#endDatepicker.destroy();
+      this.#endDatepicker = null;
     }
   }
 
@@ -142,7 +147,8 @@ export default class EditFormView extends AbstractStatefulView{
     this.element.querySelector('form').addEventListener('submit', this.#closeFormHandler);
     this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#closeFormHandler);
     this.element.querySelector('.event__type-group').addEventListener('change', this.#changeType);
-    this.element.querySelector('.event__input--destination').addEventListener('change', this.#changeDestination);
+    this.element.querySelector('.event__input--destination').addEventListener('input', this.#changeDestination);
+    this.element.querySelector('.event__available-offers').addEventListener('change', this.#changeOffers);
     this.#setDatepicker();
   }
 
@@ -160,50 +166,89 @@ export default class EditFormView extends AbstractStatefulView{
     this.updateElement({
       startDate: userDate,
     });
+    this.#validateForm();
   };
 
   #endDateChangeHandler = ([userDate]) => {
     this.updateElement({
       endDate: userDate,
     });
+    this.#validateForm();
   };
 
   #setDatepicker() {
-    this.#datepicker = flatpickr(
+    this.#startDatepicker = flatpickr(
       this.element.querySelector('#event-start-time-1'),
       {
         enableTime: true,
         dateFormat: 'd/m/y H:i',
         defaultDate: this._state.startDate,
-        onChange: this.#startDateChangeHandler,
-      },
-      this.#datepicker = flatpickr(
-        this.element.querySelector('#event-end-time-1'),
-        {
-          minDate: this._state.startDate,
-          enableTime: true,
-          dateFormat: 'd/m/y H:i',
-          defaultDate: this._state.startDate,
-          onChange: this.#endDateChangeHandler,
+        onChange: (selectedDates) => {
+          this.#startDateChangeHandler(selectedDates);
+          if (this.#endDatepicker) {
+            this.#endDatepicker.set('minDate', selectedDates[0]);
+          }
         }
-      )
+      },
     );
+    this.#endDatepicker = flatpickr(
+      this.element.querySelector('#event-end-time-1'),
+      {
+        minDate: this._state.startDate,
+        enableTime: true,
+        dateFormat: 'd/m/y H:i',
+        defaultDate: this._state.startDate > this._state.endDate ? this._state.startDate : this._state.endDate,
+        onChange: this.#endDateChangeHandler,
+      });
   }
-
 
   #changeType = (event) => {
     event.preventDefault();
     this.updateElement({
-      type: event.target.value
+      type: event.target.value,
+      offers: [],
     });
+  };
+
+  #changeOffers = (event) =>{
+    event.preventDefault();
+    const offer = getOfferById(event.target.id, getAvailableOffers(this._state.type, mockOffers));
+    const isOfferSelected = this._state.offers.some((selectedOffer) => selectedOffer.id === offer.id);
+    if (isOfferSelected){
+      const newOffers = this._state.offers.filter((selectedOffer) => selectedOffer.id !== offer.id);
+      this.updateElement({
+        offers: newOffers,
+      });
+    } else {
+      const newOffers = [...this._state.offers, offer];
+      this.updateElement({
+        offers: newOffers,
+      });
+    }
   };
 
   #changeDestination = (event) =>{
     event.preventDefault();
-
-    this.updateElement({
-      destination: getDestinationByName(event.target.value, mockDestinations),
-    });
+    const newDestination = getDestinationByName(event.target.value, mockDestinations);
+    if (newDestination){
+      this.updateElement({
+        destination: newDestination,
+      });
+    }
+    this.#validateForm();
   };
+
+  #validateForm() {
+    const isDestinationValid = !!this._state.destination?.name && this._state.destination.name !== '';
+    const isDateValid = this._state.startDate < this._state.endDate;
+    const isValid = isDestinationValid && isDateValid;
+    this.#toggleSaveButtonDisabled(!isValid);
+  }
+
+  #toggleSaveButtonDisabled(isDisabled) {
+    const saveButton = this.element.querySelector('.event__save-btn');
+    saveButton.disabled = isDisabled;
+    this._setState({ disabled: isDisabled });
+  }
 
 }

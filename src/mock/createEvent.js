@@ -12,12 +12,15 @@ function getDetailedEvents(events, destinations, offers) {
   });
 }
 
-function getAvailableOffers(event, offers){
-  return offers.find((offer) => offer.type === event.type)?.offers || [];
+function getAvailableOffers(type, offers){
+  return offers.find((offer) => offer.type === type)?.offers || [];
 }
 
 function getDestinationByName(destinationName, destinations){
   return destinations.find((dest)=> dest.name === destinationName);
 }
 
-export { getDetailedEvents, getAvailableOffers, getDestinationByName };
+function getOfferById(offerId, allOffers){
+  return allOffers.find((offer)=> offer.id === offerId);
+}
+export { getDetailedEvents, getAvailableOffers, getDestinationByName, getOfferById };
