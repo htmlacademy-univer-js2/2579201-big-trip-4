@@ -37,6 +37,13 @@ function createOffersTemplate(offer, checked){
 
 function createEditFormTemplate(event) {
   const {destination, type, price, startDate, endDate, offers, disabled} = event;
+
+  const isPriceValid = !isNaN(Number(price)) && Number(price) > 0;
+  const isDestinationValid = !!destination.name;
+  const isDateValid = startDate < endDate;
+  const isValid = isDestinationValid && isDateValid && isPriceValid;
+  const saveButtonDisabled = !isValid;
+
   const availableOffers = getAvailableOffers(type, mockOffers);
   const offersLayout = availableOffers.map((offer) =>{
     const isChecked = offers.some((eventOffer) => eventOffer.id === offer.id);
@@ -89,7 +96,7 @@ function createEditFormTemplate(event) {
                     <input class="event__input  event__input--price" id="event-price-1" type="text" name="event-price" value="${price}">
                   </div>
 
-                  <button class="event__save-btn  btn btn--blue" ${disabled ? 'disabled' : ''} type="submit">Save</button>
+                  <button class="event__save-btn  btn btn--blue" ${disabled || saveButtonDisabled ? 'disabled' : ''} type="submit">Save</button>
                   <button class="event__reset-btn" type="reset">Delete</button>
                   <button class="event__rollup-btn" type="button">
                     <span class="visually-hidden">Open event</span>
@@ -149,6 +156,7 @@ export default class EditFormView extends AbstractStatefulView{
     this.element.querySelector('.event__type-group').addEventListener('change', this.#changeType);
     this.element.querySelector('.event__input--destination').addEventListener('input', this.#changeDestination);
     this.element.querySelector('.event__available-offers').addEventListener('change', this.#changeOffers);
+    this.element.querySelector('.event__input--price').addEventListener('input', this.#changePrice);
     this.#setDatepicker();
   }
 
@@ -166,14 +174,12 @@ export default class EditFormView extends AbstractStatefulView{
     this.updateElement({
       startDate: userDate,
     });
-    this.#validateForm();
   };
 
   #endDateChangeHandler = ([userDate]) => {
     this.updateElement({
       endDate: userDate,
     });
-    this.#validateForm();
   };
 
   #setDatepicker() {
@@ -213,42 +219,27 @@ export default class EditFormView extends AbstractStatefulView{
   #changeOffers = (event) =>{
     event.preventDefault();
     const offer = getOfferById(event.target.id, getAvailableOffers(this._state.type, mockOffers));
-    const isOfferSelected = this._state.offers.some((selectedOffer) => selectedOffer.id === offer.id);
-    if (isOfferSelected){
-      const newOffers = this._state.offers.filter((selectedOffer) => selectedOffer.id !== offer.id);
-      this.updateElement({
-        offers: newOffers,
-      });
-    } else {
-      const newOffers = [...this._state.offers, offer];
-      this.updateElement({
-        offers: newOffers,
-      });
-    }
+    const { offers } = this._state;
+    const isOfferSelected = offers.some((selectedOffer) => selectedOffer.id === offer.id);
+    const newOffers = isOfferSelected ? offers.filter((selectedOffer) => selectedOffer.id !== offer.id) : [...offers, offer];
+    this.updateElement({ offers: newOffers });
   };
 
   #changeDestination = (event) =>{
     event.preventDefault();
-    const newDestination = getDestinationByName(event.target.value, mockDestinations);
-    if (newDestination){
-      this.updateElement({
-        destination: newDestination,
-      });
-    }
-    this.#validateForm();
+    const newDestinationName = event.target.value;
+    const newDestination = getDestinationByName(newDestinationName, mockDestinations);
+    this.updateElement({
+      destination: newDestination || {...this._state.destination, name:  newDestinationName},
+      disabled: !newDestination,
+    });
   };
 
-  #validateForm() {
-    const isDestinationValid = !!this._state.destination?.name && this._state.destination.name !== '';
-    const isDateValid = this._state.startDate < this._state.endDate;
-    const isValid = isDestinationValid && isDateValid;
-    this.#toggleSaveButtonDisabled(!isValid);
-  }
 
-  #toggleSaveButtonDisabled(isDisabled) {
-    const saveButton = this.element.querySelector('.event__save-btn');
-    saveButton.disabled = isDisabled;
-    this._setState({ disabled: isDisabled });
-  }
+  #changePrice = (event) =>{
+    this.updateElement({
+      price: event.target.value,
+    });
+  };
 
 }
