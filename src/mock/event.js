@@ -96,7 +96,7 @@ const mockDestinations = [
     name: 'Geneva',
     pictures: [
       {
-        src: 'http://picsum.photos/300/200?r=0.0762563005163317',
+        src: `https://loremflickr.com/248/152?random=${getRandomNumber(10)}`,
         description: 'Chamonix parliament building'
       }
     ]
@@ -107,7 +107,7 @@ const mockDestinations = [
     name: 'Chamonix',
     pictures: [
       {
-        src: 'http://picsum.photos/300/200?r=0.0762563005163317',
+        src: `https://loremflickr.com/248/152?random=${getRandomNumber(10)}`,
         description: 'Chamonix parliament building'
       }
     ]

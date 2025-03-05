@@ -51,7 +51,7 @@ function createEventTemplate(event) {
             </li>`;
 }
 
-export default class NewEventView extends AbstractView {
+export default class EventView extends AbstractView {
   #event = null;
   #handleArrowClick = null;
   #handleStarClick = null;
