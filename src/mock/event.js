@@ -1,4 +1,4 @@
-import { getRandomNumber } from '../utils';
+import { getRandomNumber } from '../utils/utils';
 
 const mockEvents = [
   {
@@ -97,7 +97,7 @@ const mockDestinations = [
     pictures: [
       {
         src: `https://loremflickr.com/248/152?random=${getRandomNumber(10)}`,
-        description: 'Chamonix parliament building'
+        description: 'Geneva'
       }
     ]
   },

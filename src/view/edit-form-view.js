@@ -2,7 +2,7 @@ import { EVENT_TYPES } from '../const.js';
 import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
 import { getAvailableOffers, getDestinationByName, getOfferById } from '../mock/createEvent.js';
 import { mockDestinations, mockOffers } from '../mock/event.js';
-import { getDateTime } from '../utils.js';
+import { getDateTime } from '../utils/utils.js';
 import flatpickr from 'flatpickr';
 
 import 'flatpickr/dist/flatpickr.min.css';
@@ -93,7 +93,7 @@ function createEditFormTemplate(event) {
                       <span class="visually-hidden">Price</span>
                       &euro;
                     </label>
-                    <input class="event__input  event__input--price" id="event-price-1" type="text" name="event-price" value="${price}">
+                    <input class="event__input  event__input--price" id="event-price-1" type="number" name="event-price" value="${price}">
                   </div>
 
                   <button class="event__save-btn  btn btn--blue" ${disabled || saveButtonDisabled ? 'disabled' : ''} type="submit">Save</button>
@@ -129,11 +129,15 @@ export default class EditFormView extends AbstractStatefulView{
   #handleCloseForm = null;
   #startDatepicker = null;
   #endDatepicker = null;
-  constructor({event, closeForm}){
+  #handleFormSubmit = null;
+  #handleDeleteClick = null;
+
+  constructor({event, closeForm, handleFormSubmit, handleDeleteClick}){
     super();
     this._setState({...event, disabled: false});
     this.#handleCloseForm = closeForm;
-
+    this.#handleFormSubmit = handleFormSubmit;
+    this.#handleDeleteClick = handleDeleteClick;
     this._restoreHandlers();
   }
 
@@ -151,10 +155,11 @@ export default class EditFormView extends AbstractStatefulView{
   }
 
   _restoreHandlers(){
-    this.element.querySelector('form').addEventListener('submit', this.#closeFormHandler);
+    this.element.querySelector('form').addEventListener('submit', this.#onFormSubmit);
+    this.element.querySelector('.event__reset-btn').addEventListener('click', this.#formDeleteClickHandler);
     this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#closeFormHandler);
     this.element.querySelector('.event__type-group').addEventListener('change', this.#changeType);
-    this.element.querySelector('.event__input--destination').addEventListener('input', this.#changeDestination);
+    this.element.querySelector('.event__input--destination').addEventListener('change', this.#changeDestination);
     this.element.querySelector('.event__available-offers').addEventListener('change', this.#changeOffers);
     this.element.querySelector('.event__input--price').addEventListener('input', this.#changePrice);
     this.#setDatepicker();
@@ -169,6 +174,17 @@ export default class EditFormView extends AbstractStatefulView{
     this.#handleCloseForm();
   };
 
+  #onFormSubmit = (e)=>{
+    e.preventDefault();
+    this.#handleFormSubmit(this.#fromStateToEvent(this._state));
+    this.#handleCloseForm();
+  };
+
+  #formDeleteClickHandler = (e) => {
+    e.preventDefault();
+    this.#handleDeleteClick(this.#fromStateToEvent(this._state));
+    this.#handleCloseForm();
+  };
 
   #startDateChangeHandler = ([userDate]) => {
     this.updateElement({
@@ -237,9 +253,15 @@ export default class EditFormView extends AbstractStatefulView{
 
 
   #changePrice = (event) =>{
-    this.updateElement({
+    this._setState({
       price: event.target.value,
     });
   };
 
+
+  #fromStateToEvent(state){
+    const event = {...state};
+    delete event.disabled;
+    return event;
+  }
 }

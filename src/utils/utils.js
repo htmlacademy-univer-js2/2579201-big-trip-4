@@ -29,5 +29,6 @@ function getEventDuration(startDate, endDate){
   }
 }
 
+
 export {getDateTime, getRandomNumber, getEventDuration};
 
