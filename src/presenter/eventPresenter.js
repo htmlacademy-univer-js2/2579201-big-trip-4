@@ -77,11 +77,11 @@ export default class EventPresenter {
   };
 
   #updateEvent = () => {
-    this.#onEventChange(UserAction.UPDATE_EVENT, UpdateType.MINOR, {...this.#event, isFavourite: !this.#event.isFavourite});
+    this.#onEventChange(UserAction.UPDATE_EVENT, UpdateType.PATCH, {...this.#event, isFavourite: !this.#event.isFavourite});
   };
 
   #handleFormSubmit = (event) =>{
-    this.#onEventChange(UserAction.UPDATE_EVENT, UpdateType.MINOR, event);
+    this.#onEventChange(UserAction.UPDATE_EVENT, UpdateType.PATCH, event);
   };
 
   resetView() {

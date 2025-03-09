@@ -92,11 +92,6 @@ export default class Presenter {
 
   }
 
-  #handleEventChange = (newEvent) =>{
-    this.events = this.events.map((item) => item.id === newEvent.id ? newEvent : item);
-    this.#eventPresenters.get(newEvent.id).init(newEvent);
-  };
-
   #handleModeChange = () => {
     this.#eventPresenters.forEach((presenter) => presenter.resetView());
   };
