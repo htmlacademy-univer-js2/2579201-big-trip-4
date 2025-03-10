@@ -1,5 +1,6 @@
 import { UpdateType, UserAction } from '../const';
 import { remove, render, replace } from '../framework/render';
+import { isDatesEqual } from '../utils/utils';
 import EditFormView from '../view/edit-form-view';
 import EventView from '../view/event-view';
 
@@ -81,7 +82,8 @@ export default class EventPresenter {
   };
 
   #handleFormSubmit = (event) =>{
-    this.#onEventChange(UserAction.UPDATE_EVENT, UpdateType.PATCH, event);
+    const isDatesChanged = !isDatesEqual(this.#event.startDate, event.startDate) || !isDatesEqual(this.#event.endDate, event.endDate);
+    this.#onEventChange(UserAction.UPDATE_EVENT, isDatesChanged ? UpdateType.MINOR : UpdateType.PATCH, event);
   };
 
   resetView() {
