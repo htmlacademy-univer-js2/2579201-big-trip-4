@@ -1,5 +1,5 @@
 import AbstractView from '../framework/view/abstract-view.js';
-import { getDateTime, getEventDuration } from '../utils.js';
+import { getDateTime, getEventDuration } from '../utils/utils.js';
 
 function createOffersTemplate(offer){
   const {title, price} = offer;

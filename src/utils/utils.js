@@ -29,5 +29,10 @@ function getEventDuration(startDate, endDate){
   }
 }
 
-export {getDateTime, getRandomNumber, getEventDuration};
+
+function isDatesEqual(dateA, dateB) {
+  return (dateA === null && dateB === null) || dayjs(dateA).isSame(dateB, 'D');
+}
+
+export {getDateTime, getRandomNumber, getEventDuration, isDatesEqual};
 
