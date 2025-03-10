@@ -1,11 +1,11 @@
 import { EmptyMessages } from '../const';
-import AbstractStatefulView from '../framework/view/abstract-stateful-view';
+import AbstractView from '../framework/view/abstract-view';
 
 function createEmptyListTemplate(filterType) {
   return `<p class="trip-events__msg">${EmptyMessages[filterType]}</p>`;
 }
 
-export default class EmptyListView extends AbstractStatefulView {
+export default class EmptyListView extends AbstractView {
   #filterType = null;
 
   constructor({filterType}) {

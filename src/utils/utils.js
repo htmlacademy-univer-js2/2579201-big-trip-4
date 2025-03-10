@@ -34,5 +34,13 @@ function isDatesEqual(dateA, dateB) {
   return (dateA === null && dateB === null) || dayjs(dateA).isSame(dateB, 'D');
 }
 
-export {getDateTime, getRandomNumber, getEventDuration, isDatesEqual};
+function generateAuth() {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let result = 'Basic ';
+  for (let i = 0; i < 15; i++) {
+    result += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return result;
+}
+export {getDateTime, getRandomNumber, getEventDuration, isDatesEqual, generateAuth};
 

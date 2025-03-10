@@ -11,23 +11,27 @@ export default class EventPresenter {
 
   #onEventChange = null;
   #handleModeChange = null;
-  #event = null;
 
+
+  #event = null;
+  #destinations = null;
+  #offers = null;
   #isEditing = false;
 
 
-  constructor({eventListComponent, handleEventChange, handleModeChange}){
+  constructor({eventListComponent, handleEventChange, handleModeChange, destinations, offers}){
     this.#eventListComponent = eventListComponent;
     this.#onEventChange = handleEventChange;
     this.#handleModeChange = handleModeChange;
+
+    this.#destinations = destinations;
+    this.#offers = offers;
   }
 
   init(event){
     this.#event = event;
-
     const prevEventComponent = this.#eventComponent;
     const prevEventEditComponent = this.#eventEditComponent;
-
     this.#eventComponent = new EventView({event: this.#event, onArrowClick: ()=>{
       this.#openEditor();
       document.addEventListener('keydown', this.#escKeyHandler);
@@ -36,10 +40,14 @@ export default class EventPresenter {
     }
     });
 
-    this.#eventEditComponent = new EditFormView({event: this.#event, closeForm: ()=>{
-      document.addEventListener('keydown', this.#escKeyHandler);
-      this.#closeEditor();
-    }, handleFormSubmit: this.#handleFormSubmit, handleDeleteClick: this.#handleDeleteClick,});
+    this.#eventEditComponent = new EditFormView({
+      event: this.#event,
+      destinations: this.#destinations, offers: this.#offers,
+      closeForm: ()=>{
+        document.addEventListener('keydown', this.#escKeyHandler);
+        this.#closeEditor();
+      },
+      handleFormSubmit: this.#handleFormSubmit, handleDeleteClick: this.#handleDeleteClick});
 
     if (prevEventComponent === null || prevEventEditComponent === null) {
       render(this.#eventComponent, this.#eventListComponent.element);

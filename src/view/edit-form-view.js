@@ -1,7 +1,7 @@
 import { EVENT_TYPES } from '../const.js';
 import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
-import { getAvailableOffers, getDestinationByName, getOfferById } from '../mock/createEvent.js';
-import { mockDestinations, mockOffers } from '../mock/event.js';
+import { getAvailableOffers, getDestinationByName, getOfferById } from '../utils/events.js';
+
 import { getDateTime } from '../utils/utils.js';
 import flatpickr from 'flatpickr';
 
@@ -14,8 +14,8 @@ function generateEventTypeRadio(eventType){
 </div>`).join('');
 }
 
-function generateDestinations(){
-  return mockDestinations.map((dest)=> `<option value=${dest.name}></option>`).join('');
+function generateDestinations(destinations){
+  return destinations.map((dest)=> `<option value=${dest.name}></option>`).join('');
 }
 
 function generateDestinationPhoto(photo){
@@ -35,7 +35,7 @@ function createOffersTemplate(offer, checked){
   </div>`;
 }
 
-function createEditFormTemplate(event) {
+function createEditFormTemplate(event, destinations, allOffers) {
   const {destination, type, price, startDate, endDate, offers, disabled} = event;
 
   const isPriceValid = !isNaN(Number(price)) && Number(price) > 0;
@@ -43,8 +43,7 @@ function createEditFormTemplate(event) {
   const isDateValid = startDate < endDate;
   const isValid = isDestinationValid && isDateValid && isPriceValid;
   const saveButtonDisabled = !isValid;
-
-  const availableOffers = getAvailableOffers(type, mockOffers);
+  const availableOffers = getAvailableOffers(type, allOffers);
   const offersLayout = availableOffers.map((offer) =>{
     const isChecked = offers.some((eventOffer) => eventOffer.id === offer.id);
     return createOffersTemplate(offer, isChecked);
@@ -76,7 +75,7 @@ function createEditFormTemplate(event) {
                     </label>
                     <input class="event__input  event__input--destination" id="event-destination-1" type="text" name="event-destination" value="${destination.name}" list="destination-list-1">
                     <datalist id="destination-list-1">
-                     ${generateDestinations()}
+                     ${generateDestinations(destinations)}
                     </datalist>
                   </div>
 
@@ -132,12 +131,18 @@ export default class EditFormView extends AbstractStatefulView{
   #handleFormSubmit = null;
   #handleDeleteClick = null;
 
-  constructor({event, closeForm, handleFormSubmit, handleDeleteClick}){
+  #destinations = null;
+  #offers = null;
+
+  constructor({event, destinations, offers, closeForm, handleFormSubmit, handleDeleteClick}){
     super();
     this._setState({...event, disabled: false});
     this.#handleCloseForm = closeForm;
     this.#handleFormSubmit = handleFormSubmit;
     this.#handleDeleteClick = handleDeleteClick;
+    this.#destinations = destinations;
+    this.#offers = offers;
+
     this._restoreHandlers();
   }
 
@@ -166,7 +171,7 @@ export default class EditFormView extends AbstractStatefulView{
   }
 
   get template() {
-    return createEditFormTemplate(this._state);
+    return createEditFormTemplate(this._state, this.#destinations, this.#offers);
   }
 
   #closeFormHandler = (e) =>{
@@ -234,7 +239,7 @@ export default class EditFormView extends AbstractStatefulView{
 
   #changeOffers = (event) =>{
     event.preventDefault();
-    const offer = getOfferById(event.target.id, getAvailableOffers(this._state.type, mockOffers));
+    const offer = getOfferById(event.target.id, getAvailableOffers(this._state.type, this.#offers));
     const { offers } = this._state;
     const isOfferSelected = offers.some((selectedOffer) => selectedOffer.id === offer.id);
     const newOffers = isOfferSelected ? offers.filter((selectedOffer) => selectedOffer.id !== offer.id) : [...offers, offer];
@@ -244,7 +249,7 @@ export default class EditFormView extends AbstractStatefulView{
   #changeDestination = (event) =>{
     event.preventDefault();
     const newDestinationName = event.target.value;
-    const newDestination = getDestinationByName(newDestinationName, mockDestinations);
+    const newDestination = getDestinationByName(newDestinationName, this.#destinations);
     this.updateElement({
       destination: newDestination || {...this._state.destination, name:  newDestinationName},
       disabled: !newDestination,

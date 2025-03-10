@@ -15,6 +15,7 @@ const FilterType = {
 const UpdateType = {
   PATCH: 'PATCH',
   MINOR: 'MINOR',
+  INIT: 'INIT',
 };
 
 
