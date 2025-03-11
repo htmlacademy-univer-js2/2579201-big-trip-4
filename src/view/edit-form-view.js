@@ -1,7 +1,7 @@
 import { EVENT_TYPES } from '../const.js';
 import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
-import { getAvailableOffers, getDestinationByName, getOfferById } from '../mock/createEvent.js';
-import { mockDestinations, mockOffers } from '../mock/event.js';
+import { getAvailableOffers, getDestinationByName, getOfferById } from '../utils/events.js';
+
 import { getDateTime } from '../utils/utils.js';
 import flatpickr from 'flatpickr';
 
@@ -14,8 +14,8 @@ function generateEventTypeRadio(eventType){
 </div>`).join('');
 }
 
-function generateDestinations(){
-  return mockDestinations.map((dest)=> `<option value=${dest.name}></option>`).join('');
+function generateDestinations(destinations){
+  return destinations.map((dest)=> `<option value=${dest.name}></option>`).join('');
 }
 
 function generateDestinationPhoto(photo){
@@ -35,16 +35,15 @@ function createOffersTemplate(offer, checked){
   </div>`;
 }
 
-function createEditFormTemplate(event) {
-  const {destination, type, price, startDate, endDate, offers, disabled} = event;
+function createEditFormTemplate(event, destinations, allOffers) {
+  const {destination, type, price, startDate, endDate, offers, disabled, isSaving, isDeleting, isButtonsDisabled} = event;
 
   const isPriceValid = !isNaN(Number(price)) && Number(price) > 0;
   const isDestinationValid = !!destination.name;
   const isDateValid = startDate < endDate;
   const isValid = isDestinationValid && isDateValid && isPriceValid;
   const saveButtonDisabled = !isValid;
-
-  const availableOffers = getAvailableOffers(type, mockOffers);
+  const availableOffers = getAvailableOffers(type, allOffers);
   const offersLayout = availableOffers.map((offer) =>{
     const isChecked = offers.some((eventOffer) => eventOffer.id === offer.id);
     return createOffersTemplate(offer, isChecked);
@@ -59,10 +58,10 @@ function createEditFormTemplate(event) {
                       <span class="visually-hidden">Choose event type</span>
                       <img class="event__type-icon" width="17" height="17" src="img/icons/${type}.png" alt="Event type icon">
                     </label>
-                    <input class="event__type-toggle  visually-hidden" id="event-type-toggle-1" type="checkbox">
+                    <input class="event__type-toggle  visually-hidden" id="event-type-toggle-1" type="checkbox" ${isButtonsDisabled ? 'disabled' : ''}>
 
                     <div class="event__type-list">
-                      <fieldset class="event__type-group">
+                      <fieldset class="event__type-group" >
                         <legend class="visually-hidden">Event type</legend>
 
                         ${generateEventTypeRadio(type)}
@@ -74,18 +73,18 @@ function createEditFormTemplate(event) {
                     <label class="event__label  event__type-output" for="event-destination-1">
                       ${type}
                     </label>
-                    <input class="event__input  event__input--destination" id="event-destination-1" type="text" name="event-destination" value="${destination.name}" list="destination-list-1">
+                    <input class="event__input  event__input--destination" id="event-destination-1" type="text" name="event-destination" ${isButtonsDisabled ? 'disabled' : ''} value="${destination.name}" list="destination-list-1">
                     <datalist id="destination-list-1">
-                     ${generateDestinations()}
+                     ${generateDestinations(destinations)}
                     </datalist>
                   </div>
 
                   <div class="event__field-group  event__field-group--time">
                     <label class="visually-hidden" for="event-start-time-1">From</label>
-                    <input class="event__input  event__input--time" id="event-start-time-1" type="text" name="event-start-time" value="${getDateTime(startDate)}">
+                    <input class="event__input  event__input--time" id="event-start-time-1" type="text" name="event-start-time" ${isButtonsDisabled ? 'disabled' : ''} value="${getDateTime(startDate)}">
                     &mdash;
                     <label class="visually-hidden" for="event-end-time-1">To</label>
-                    <input class="event__input  event__input--time" id="event-end-time-1" type="text" name="event-end-time" value="${getDateTime(endDate)}">
+                    <input class="event__input  event__input--time" id="event-end-time-1" type="text" name="event-end-time" ${isButtonsDisabled ? 'disabled' : ''} value="${getDateTime(endDate)}">
                   </div>
 
                   <div class="event__field-group  event__field-group--price">
@@ -96,8 +95,8 @@ function createEditFormTemplate(event) {
                     <input class="event__input  event__input--price" id="event-price-1" type="number" name="event-price" value="${price}">
                   </div>
 
-                  <button class="event__save-btn  btn btn--blue" ${disabled || saveButtonDisabled ? 'disabled' : ''} type="submit">Save</button>
-                  <button class="event__reset-btn" type="reset">Delete</button>
+                  <button class="event__save-btn  btn btn--blue" ${disabled || saveButtonDisabled || isButtonsDisabled ? 'disabled' : ''} type="submit">${isSaving ? 'Saving' : 'Save'}</button>
+                  <button class="event__reset-btn" type="reset" ${isButtonsDisabled ? 'disabled' : ''}>${isDeleting ? 'Deleting' : 'Delete'}</button>
                   <button class="event__rollup-btn" type="button">
                     <span class="visually-hidden">Open event</span>
                   </button>
@@ -132,12 +131,18 @@ export default class EditFormView extends AbstractStatefulView{
   #handleFormSubmit = null;
   #handleDeleteClick = null;
 
-  constructor({event, closeForm, handleFormSubmit, handleDeleteClick}){
+  #destinations = null;
+  #offers = null;
+
+  constructor({event, destinations, offers, closeForm, handleFormSubmit, handleDeleteClick}){
     super();
-    this._setState({...event, disabled: false});
+    this._setState({...event, disabled: false, isSaving: false, isDeleting: false, isButtonsDisabled: false});
     this.#handleCloseForm = closeForm;
     this.#handleFormSubmit = handleFormSubmit;
     this.#handleDeleteClick = handleDeleteClick;
+    this.#destinations = destinations;
+    this.#offers = offers;
+
     this._restoreHandlers();
   }
 
@@ -166,7 +171,7 @@ export default class EditFormView extends AbstractStatefulView{
   }
 
   get template() {
-    return createEditFormTemplate(this._state);
+    return createEditFormTemplate(this._state, this.#destinations, this.#offers);
   }
 
   #closeFormHandler = (e) =>{
@@ -177,13 +182,11 @@ export default class EditFormView extends AbstractStatefulView{
   #onFormSubmit = (e)=>{
     e.preventDefault();
     this.#handleFormSubmit(this.#fromStateToEvent(this._state));
-    this.#handleCloseForm();
   };
 
   #formDeleteClickHandler = (e) => {
     e.preventDefault();
     this.#handleDeleteClick(this.#fromStateToEvent(this._state));
-    this.#handleCloseForm();
   };
 
   #startDateChangeHandler = ([userDate]) => {
@@ -234,7 +237,7 @@ export default class EditFormView extends AbstractStatefulView{
 
   #changeOffers = (event) =>{
     event.preventDefault();
-    const offer = getOfferById(event.target.id, getAvailableOffers(this._state.type, mockOffers));
+    const offer = getOfferById(event.target.id, getAvailableOffers(this._state.type, this.#offers));
     const { offers } = this._state;
     const isOfferSelected = offers.some((selectedOffer) => selectedOffer.id === offer.id);
     const newOffers = isOfferSelected ? offers.filter((selectedOffer) => selectedOffer.id !== offer.id) : [...offers, offer];
@@ -244,7 +247,7 @@ export default class EditFormView extends AbstractStatefulView{
   #changeDestination = (event) =>{
     event.preventDefault();
     const newDestinationName = event.target.value;
-    const newDestination = getDestinationByName(newDestinationName, mockDestinations);
+    const newDestination = getDestinationByName(newDestinationName, this.#destinations);
     this.updateElement({
       destination: newDestination || {...this._state.destination, name:  newDestinationName},
       disabled: !newDestination,
@@ -262,6 +265,9 @@ export default class EditFormView extends AbstractStatefulView{
   #fromStateToEvent(state){
     const event = {...state};
     delete event.disabled;
+    delete event.isSaving;
+    delete event.isDeleting;
+    delete event.isButtonsDisabled;
     return event;
   }
 }

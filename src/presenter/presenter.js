@@ -6,6 +6,7 @@ import EventPresenter from './eventPresenter.js';
 import { UpdateType, UserAction } from '../const.js';
 import { filter } from '../utils/filter.js';
 import EmptyListView from '../view/empty-list-view.js';
+import LoadingView from '../view/loading-view.js';
 
 export default class Presenter {
   #eventListComponent = new EventListView();
@@ -13,8 +14,10 @@ export default class Presenter {
   #eventModel = null;
   #eventPresenters = new Map();
   #filterModel = null;
+  #isLoading = true;
+  #sortComponent = new SortView();
+  #loadingComponent = new LoadingView();
 
-  #sortComponent = null;
 
   constructor({eventModel, filterModel}) {
     this.#eventsContainer = document.querySelector('.trip-events');
@@ -39,12 +42,15 @@ export default class Presenter {
   #handleViewAction = (actionType, updateType, update) => {
     switch (actionType) {
       case UserAction.UPDATE_EVENT:
+        this.#eventPresenters.get(update.id).setSaving();
         this.#eventModel.updateEvent(updateType, update);
         break;
       case UserAction.ADD_EVENT:
+        this.#eventPresenters.get(update.id).setSaving();
         this.#eventModel.addEvent(updateType, update);
         break;
       case UserAction.DELETE_EVENT:
+        this.#eventPresenters.get(update.id).setDeleting();
         this.#eventModel.deleteEvent(updateType, update);
         break;
     }
@@ -59,17 +65,27 @@ export default class Presenter {
         this.#clearBoard();
         this.#renderBoard();
         break;
+      case UpdateType.INIT:
+        this.#isLoading = false;
+        remove(this.#loadingComponent);
+        this.#renderBoard();
+        break;
     }
   };
 
-
   #renderBoard(){
-    this.#sortComponent = new SortView();
     render(this.#sortComponent, this.#eventsContainer);
+
+    if (this.#isLoading) {
+      this.#renderLoading();
+      return;
+    }
+
     render(this.#eventListComponent, this.#eventsContainer);
-    if (this.events.length > 0){
-      for (let i = 0; i < this.events.length; i++) {
-        this.#renderEvents(this.events[i]);
+    const events = this.events;
+    if (events.length > 0){
+      for (let i = 0; i < events.length; i++) {
+        this.#renderEvents(events[i]);
       }
     } else{
       render(new EmptyListView({filterType: this.#filterModel.filter}),this.#eventListComponent.element);
@@ -82,14 +98,17 @@ export default class Presenter {
     remove(this.#sortComponent);
     this.#eventPresenters.forEach((presenter) => presenter.destroy());
     this.#eventPresenters.clear();
-
   }
 
   #renderEvents(event){
-    const eventPresenter = new EventPresenter({eventListComponent: this.#eventListComponent, handleEventChange: this.#handleViewAction, handleModeChange: this.#handleModeChange});
+    const eventPresenter = new EventPresenter({eventListComponent: this.#eventListComponent, handleEventChange: this.#handleViewAction, handleModeChange: this.#handleModeChange, destinations: this.#eventModel.destinations, offers: this.#eventModel.offers});
     eventPresenter.init(event);
     this.#eventPresenters.set(event.id, eventPresenter);
 
+  }
+
+  #renderLoading(){
+    render(this.#loadingComponent, this.#eventsContainer);
   }
 
   #handleModeChange = () => {
