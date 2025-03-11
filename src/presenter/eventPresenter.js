@@ -59,8 +59,10 @@ export default class EventPresenter {
     }
 
     if (this.#isEditing) {
-      replace(this.#eventEditComponent, prevEventEditComponent);
+      replace(this.#eventComponent, prevEventEditComponent);
+      this.#isEditing = false;
     }
+
     remove(prevEventComponent);
     remove(prevEventEditComponent);
   }
@@ -103,6 +105,24 @@ export default class EventPresenter {
   #handleDeleteClick = (event) =>{
     this.#onEventChange(UserAction.DELETE_EVENT, UpdateType.MINOR, event);
   };
+
+  setSaving(){
+    if (this.#isEditing){
+      this.#eventEditComponent.updateElement({
+        isButtonsDisabled: true,
+        isSaving: true,
+      });
+    }
+  }
+
+  setDeleting(){
+    if (this.#isEditing){
+      this.#eventEditComponent.updateElement({
+        isButtonsDisabled: true,
+        isDeleting: true,
+      });
+    }
+  }
 
   destroy() {
     remove(this.#eventComponent);

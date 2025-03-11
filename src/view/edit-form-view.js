@@ -36,7 +36,7 @@ function createOffersTemplate(offer, checked){
 }
 
 function createEditFormTemplate(event, destinations, allOffers) {
-  const {destination, type, price, startDate, endDate, offers, disabled} = event;
+  const {destination, type, price, startDate, endDate, offers, disabled, isSaving, isDeleting, isButtonsDisabled} = event;
 
   const isPriceValid = !isNaN(Number(price)) && Number(price) > 0;
   const isDestinationValid = !!destination.name;
@@ -58,10 +58,10 @@ function createEditFormTemplate(event, destinations, allOffers) {
                       <span class="visually-hidden">Choose event type</span>
                       <img class="event__type-icon" width="17" height="17" src="img/icons/${type}.png" alt="Event type icon">
                     </label>
-                    <input class="event__type-toggle  visually-hidden" id="event-type-toggle-1" type="checkbox">
+                    <input class="event__type-toggle  visually-hidden" id="event-type-toggle-1" type="checkbox" ${isButtonsDisabled ? 'disabled' : ''}>
 
                     <div class="event__type-list">
-                      <fieldset class="event__type-group">
+                      <fieldset class="event__type-group" >
                         <legend class="visually-hidden">Event type</legend>
 
                         ${generateEventTypeRadio(type)}
@@ -73,7 +73,7 @@ function createEditFormTemplate(event, destinations, allOffers) {
                     <label class="event__label  event__type-output" for="event-destination-1">
                       ${type}
                     </label>
-                    <input class="event__input  event__input--destination" id="event-destination-1" type="text" name="event-destination" value="${destination.name}" list="destination-list-1">
+                    <input class="event__input  event__input--destination" id="event-destination-1" type="text" name="event-destination" ${isButtonsDisabled ? 'disabled' : ''} value="${destination.name}" list="destination-list-1">
                     <datalist id="destination-list-1">
                      ${generateDestinations(destinations)}
                     </datalist>
@@ -81,10 +81,10 @@ function createEditFormTemplate(event, destinations, allOffers) {
 
                   <div class="event__field-group  event__field-group--time">
                     <label class="visually-hidden" for="event-start-time-1">From</label>
-                    <input class="event__input  event__input--time" id="event-start-time-1" type="text" name="event-start-time" value="${getDateTime(startDate)}">
+                    <input class="event__input  event__input--time" id="event-start-time-1" type="text" name="event-start-time" ${isButtonsDisabled ? 'disabled' : ''} value="${getDateTime(startDate)}">
                     &mdash;
                     <label class="visually-hidden" for="event-end-time-1">To</label>
-                    <input class="event__input  event__input--time" id="event-end-time-1" type="text" name="event-end-time" value="${getDateTime(endDate)}">
+                    <input class="event__input  event__input--time" id="event-end-time-1" type="text" name="event-end-time" ${isButtonsDisabled ? 'disabled' : ''} value="${getDateTime(endDate)}">
                   </div>
 
                   <div class="event__field-group  event__field-group--price">
@@ -95,8 +95,8 @@ function createEditFormTemplate(event, destinations, allOffers) {
                     <input class="event__input  event__input--price" id="event-price-1" type="number" name="event-price" value="${price}">
                   </div>
 
-                  <button class="event__save-btn  btn btn--blue" ${disabled || saveButtonDisabled ? 'disabled' : ''} type="submit">Save</button>
-                  <button class="event__reset-btn" type="reset">Delete</button>
+                  <button class="event__save-btn  btn btn--blue" ${disabled || saveButtonDisabled || isButtonsDisabled ? 'disabled' : ''} type="submit">${isSaving ? 'Saving' : 'Save'}</button>
+                  <button class="event__reset-btn" type="reset" ${isButtonsDisabled ? 'disabled' : ''}>${isDeleting ? 'Deleting' : 'Delete'}</button>
                   <button class="event__rollup-btn" type="button">
                     <span class="visually-hidden">Open event</span>
                   </button>
@@ -136,7 +136,7 @@ export default class EditFormView extends AbstractStatefulView{
 
   constructor({event, destinations, offers, closeForm, handleFormSubmit, handleDeleteClick}){
     super();
-    this._setState({...event, disabled: false});
+    this._setState({...event, disabled: false, isSaving: false, isDeleting: false, isButtonsDisabled: false});
     this.#handleCloseForm = closeForm;
     this.#handleFormSubmit = handleFormSubmit;
     this.#handleDeleteClick = handleDeleteClick;
@@ -182,13 +182,11 @@ export default class EditFormView extends AbstractStatefulView{
   #onFormSubmit = (e)=>{
     e.preventDefault();
     this.#handleFormSubmit(this.#fromStateToEvent(this._state));
-    this.#handleCloseForm();
   };
 
   #formDeleteClickHandler = (e) => {
     e.preventDefault();
     this.#handleDeleteClick(this.#fromStateToEvent(this._state));
-    this.#handleCloseForm();
   };
 
   #startDateChangeHandler = ([userDate]) => {
@@ -267,6 +265,9 @@ export default class EditFormView extends AbstractStatefulView{
   #fromStateToEvent(state){
     const event = {...state};
     delete event.disabled;
+    delete event.isSaving;
+    delete event.isDeleting;
+    delete event.isButtonsDisabled;
     return event;
   }
 }
